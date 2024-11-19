@@ -1,0 +1,79 @@
+{% extends 'tracker/base.html' %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Calorie Tracker Card -->
+    <div class="col-12 col-md-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title text-success">Calorie Tracker</h5>
+                <div class="text-center my-4">
+                    <div class="position-relative d-inline-block">
+                        <div class="progress-circle">
+                            <svg width="200" height="200" viewBox="0 0 200 200">
+                                <circle cx="100" cy="100" r="90" fill="none" stroke="#e9ecef" stroke-width="12"/>
+                                {% widthratio daily_calories user.userprofile.daily_calorie_goal 100 as percentage %}
+                                <circle cx="100" cy="100" r="90" fill="none" stroke="#4CAF50" stroke-width="12"
+                                        stroke-dasharray="565.48" stroke-dashoffset="{% widthratio percentage 100 565.48 %}"
+                                        transform="rotate(-90 100 100)"/>
+                            </svg>
+                            <div class="progress-circle-content">
+                                <h2 class="mb-0">{{ calories_remaining }}</h2>
+                                <p class="mb-0">Remaining</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <p class="text-center mb-0">Calories</p>
+                        <small class="text-muted">Remaining = Goal - Food + Exercise</small>
+                    </div>
+                    <div class="row text-center mt-4">
+                        <div class="col">
+                            <p class="mb-0">Goal</p>
+                            <h5>{{ user.userprofile.daily_calorie_goal }}</h5>
+                        </div>
+                        <div class="col">
+                            <p class="mb-0">Food</p>
+                            <h5>{{ daily_calories }}</h5>
+                        </div>
+                        <div class="col">
+                            <p class="mb-0">Exercise</p>
+                            <h5>0</h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Challenges Card -->
+    <div class="col-12 col-md-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title text-success">Active Challenges</h5>
+                {% if active_challenges %}
+                    <div class="challenge-items mt-4">
+                        {% for challenge in active_challenges %}
+                            <div class="challenge-item bg-success bg-opacity-25 p-3 rounded-3 mb-3">
+                                <h6 class="mb-2">{{ challenge.challenge.title }}</h6>
+                                <p class="mb-2">{{ challenge.challenge.description }}</p>
+                                <form method="post" action="{% url 'challenges' %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="challenge_id" value="{{ challenge.id }}">
+                                    <input type="hidden" name="action" value="complete">
+                                    <button type="submit" class="btn btn-success btn-sm">Complete Challenge</button>
+                                </form>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-center mt-4">No active challenges. Visit the Challenges page to start one!</p>
+                    <div class="text-center">
+                        <a href="{% url 'challenges' %}" class="btn btn-success">View Challenges</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

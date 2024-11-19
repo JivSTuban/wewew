@@ -1,0 +1,207 @@
+{% extends 'tracker/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Food diary script loaded');
+    
+    // Attach lookup button click handler
+    const lookupBtn = document.querySelector('button[onclick="lookupFood()"]');
+    if (lookupBtn) {
+        lookupBtn.removeAttribute('onclick');
+        lookupBtn.addEventListener('click', lookupFood);
+    }
+});
+
+// Function to get CSRF token from cookies
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Function to show feedback message
+function showFeedback(message, type) {
+    const feedbackDiv = document.getElementById('lookupFeedback');
+    if (feedbackDiv) {
+        feedbackDiv.textContent = message;
+        feedbackDiv.className = `alert alert-${type} mt-2`;
+        feedbackDiv.style.display = 'block';
+        
+        // Hide the message after 5 seconds
+        setTimeout(() => {
+            feedbackDiv.style.display = 'none';
+        }, 5000);
+    }
+}
+
+// Define the lookupFood function
+function lookupFood() {
+    const foodNameInput = document.getElementById('id_food_name');
+    if (!foodNameInput) {
+        console.error('Food name input not found');
+        return;
+    }
+
+    const foodName = foodNameInput.value.trim();
+    if (!foodName) {
+        showFeedback('Please enter a food name', 'warning');
+        return;
+    }
+
+    const btn = document.querySelector('button.btn-outline-secondary');
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Looking up...';
+    }
+
+    console.log('Looking up food:', foodName);
+
+    // Get CSRF token from cookie
+    const csrftoken = getCookie('csrftoken');
+
+    // Make the API call
+    fetch('/lookup-food/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify({
+            food_name: foodName
+        })
+    })
+    .then(function(response) {
+        console.log('Response status:', response.status);
+        if (!response.ok) {
+            return response.json().then(data => {
+                throw new Error(data.error || 'API request failed');
+            });
+        }
+        return response.json();
+    })
+    .then(function(data) {
+        console.log('Received data:', data);
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        
+        // Update the food name with the standardized name from the API
+        if (data.food_name) {
+            foodNameInput.value = data.food_name;
+        }
+        
+        // Fill in the form fields
+        const fields = ['calories', 'carbs', 'protein', 'fat'];
+        fields.forEach(field => {
+            const input = document.getElementById(`id_${field}`);
+            if (input) {
+                input.value = data[field] || '';
+            }
+        });
+
+        // Show success message with nutritional info
+        const message = `Found: ${data.food_name}\nCalories: ${data.calories || 'N/A'} kcal | Protein: ${data.protein || 'N/A'}g | Carbs: ${data.carbs || 'N/A'}g | Fat: ${data.fat || 'N/A'}g`;
+        showFeedback(message, 'success');
+    })
+    .catch(function(error) {
+        console.error('Error:', error);
+        showFeedback('Error looking up food: ' + error.message, 'danger');
+    })
+    .finally(function() {
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = 'Look up';
+        }
+    });
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Food Diary</h2>
+    <button class="btn btn-success" type="button" data-bs-toggle="collapse" data-bs-target="#addFoodForm">
+        Add Food Entry
+    </button>
+
+    <!-- Display food entries -->
+    {% if entries %}
+    <div class="mt-3">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Food Name</th>
+                    <th>Quantity</th>
+                    <th>Meal Type</th>
+                    <th>Calories</th>
+                    <th>Carbs (g)</th>
+                    <th>Protein (g)</th>
+                    <th>Fat (g)</th>
+                    <th>Fiber (g)</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in entries %}
+                <tr>
+                    <td>{{ entry.food_name }}</td>
+                    <td>{{ entry.quantity }}</td>
+                    <td>{{ entry.meal_type|title }}</td>
+                    <td>{{ entry.calories|default:'-' }}</td>
+                    <td>{{ entry.carbs|default:'-' }}</td>
+                    <td>{{ entry.protein|default:'-' }}</td>
+                    <td>{{ entry.fat|default:'-' }}</td>
+                    <td>{{ entry.fiber|default:'-' }}</td>
+                    <td>{{ entry.date|date:"Y-m-d" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Display totals -->
+        <div class="mt-3">
+            <h4>Daily Totals</h4>
+            <table class="table">
+                <tr>
+                    <th>Calories</th>
+                    <th>Carbs (g)</th>
+                    <th>Protein (g)</th>
+                    <th>Fat (g)</th>
+                    <th>Fiber (g)</th>
+                </tr>
+                <tr>
+                    <td>{{ totals.calories|floatformat:2 }}</td>
+                    <td>{{ totals.carbs|floatformat:2 }}</td>
+                    <td>{{ totals.protein|floatformat:2 }}</td>
+                    <td>{{ totals.fat|floatformat:2 }}</td>
+                    <td>{{ totals.fiber|floatformat:2 }}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <p class="mt-3">No food entries yet today.</p>
+    {% endif %}
+
+    <!-- Add Food Form -->
+    <div class="collapse mt-3" id="addFoodForm">
+        <div class="card card-body">
+            <form method="post" id="foodEntryForm">
+                {% csrf_token %}
+                {% crispy form %}
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,91 @@
+{% extends 'tracker/base.html' %}
+{% block content %}
+<div class="row g-4">
+    <!-- Active Challenges -->
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title text-success mb-4">Your Active Challenges</h5>
+                {% if user_challenges %}
+                    <div class="row g-4">
+                        {% for user_challenge in user_challenges %}
+                            {% if not user_challenge.completed %}
+                                <div class="col-md-6">
+                                    <div class="challenge-item bg-success bg-opacity-25 p-3 rounded-3">
+                                        <h6 class="mb-2">{{ user_challenge.challenge.title }}</h6>
+                                        <p class="mb-2">{{ user_challenge.challenge.description }}</p>
+                                        <p class="mb-2"><small>Points: {{ user_challenge.challenge.points }}</small></p>
+                                        <form method="post" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="challenge_id" value="{{ user_challenge.id }}">
+                                            <input type="hidden" name="action" value="complete">
+                                            <button type="submit" class="btn btn-success btn-sm">Complete Challenge</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-center">No active challenges. Start one from below!</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Available Challenges -->
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title text-success mb-4">Available Challenges</h5>
+                <div class="row g-4">
+                    {% for challenge in available_challenges %}
+                        <div class="col-md-6">
+                            <div class="challenge-item bg-light p-3 rounded-3">
+                                <h6 class="mb-2">{{ challenge.title }}</h6>
+                                <p class="mb-2">{{ challenge.description }}</p>
+                                <p class="mb-2"><small>Points: {{ challenge.points }}</small></p>
+                                <form method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="challenge_id" value="{{ challenge.id }}">
+                                    <input type="hidden" name="action" value="start">
+                                    <button type="submit" class="btn btn-outline-success btn-sm">Start Challenge</button>
+                                </form>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Completed Challenges -->
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title text-success mb-4">Completed Challenges</h5>
+                {% if user_challenges %}
+                    <div class="row g-4">
+                        {% for user_challenge in user_challenges %}
+                            {% if user_challenge.completed %}
+                                <div class="col-md-6">
+                                    <div class="challenge-item bg-success bg-opacity-10 p-3 rounded-3">
+                                        <h6 class="mb-2">{{ user_challenge.challenge.title }}</h6>
+                                        <p class="mb-2">{{ user_challenge.challenge.description }}</p>
+                                        <p class="mb-2"><small>Points: {{ user_challenge.challenge.points }}</small></p>
+                                        <p class="mb-0"><small class="text-success">
+                                            <i class="bi bi-check-circle-fill"></i> Completed on {{ user_challenge.completion_date }}
+                                        </small></p>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-center">No completed challenges yet. Keep going!</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

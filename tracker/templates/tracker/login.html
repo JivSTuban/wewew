@@ -1,0 +1,23 @@
+{% extends 'tracker/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title text-success mb-4">Login</h5>
+                <form method="post">
+                    {% csrf_token %}
+                    {% crispy form %}
+                </form>
+                <div class="text-center mt-3">
+                    <small class="text-muted">
+                        Don't have an account? <a href="{% url 'register' %}" class="text-success">Register</a>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% load crispy_forms_field %}
+
+<div class="input-group {% if field.errors %}has-error{% endif %}">
+    {% crispy_field field %}
+    <button type="button" class="btn btn-outline-secondary" onclick="lookupFood()">
+        Look up
+    </button>
+</div>
+{% if field.errors %}
+    {% for error in field.errors %}
+        <span id="error_{{ forloop.counter }}_{{ field.auto_id }}" class="text-danger">{{ error }}</span>
+    {% endfor %}
+{% endif %}
+{% if field.help_text %}
+    <div id="hint_{{ field.auto_id }}" class="form-text">{{ field.help_text }}</div>
+{% endif %}
+<div id="lookupFeedback" class="alert mt-2" style="display: none;"></div>
+<div id="foodSuggestions" class="form-text"></div>
